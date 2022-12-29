@@ -1,0 +1,64 @@
+sourceCompatibility = 1.8
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8' //needed?
+sourceSets.main.java.srcDirs = [ "src/" ]
+sourceSets.main.resources.srcDirs = ["../assets"]
+
+project.ext.mainClassName = "console.Main"
+project.ext.assetsDir = new File("../assets")
+
+import org.gradle.internal.os.OperatingSystem
+
+task run(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+
+    if (OperatingSystem.current() == OperatingSystem.MAC_OS) {
+        // Required to run on macOS
+        jvmArgs += "-XstartOnFirstThread"
+    }
+}
+
+task debug(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+    debug = true
+}
+
+task dist(type: Jar) {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    manifest {
+        attributes 'Main-Class': project.mainClassName
+    }
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+}
+
+dependencies {
+    implementation 'junit:junit:4.13.2'
+    implementation 'com.badlogicgames.gdx:gdx:1.11.0'
+    implementation 'com.badlogicgames.gdx:gdx-lwjgl3-angle:1.11.0'
+    implementation 'com.badlogicgames.gdx:gdx-lwjgl3-glfw-awt-macos:1.11.0'
+    implementation 'com.badlogicgames.gdx:gdx-openal:0.9.9'
+    implementation 'com.badlogicgames.gdx:gdx:1.11.0'
+    implementation 'com.badlogicgames.gdx:gdx-lwjgl3-angle:1.11.0'
+    implementation 'org.lwjgl:lwjgl-opengles:3.3.1'
+
+    implementation 'junit:junit:4.13.2'
+    api "com.badlogicgames.gdx:gdx:$gdxVersion"
+    api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+
+dist.dependsOn classes
+
+eclipse.project.name = appName + "-core"
